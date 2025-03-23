@@ -870,9 +870,9 @@
     </div>
   </div>
 
-  <div class="symbols-panel">
-    <slot name="symbols">
-      <div style="color: #666;">No symbols created yet</div>
+  <div class="tools-panel">
+    <slot name="tools">
+      <div style="color: #666;">Tools will appear here</div>
     </slot>
   </div>
 
@@ -915,9 +915,9 @@
     {/if}
   </div>
 
-  <div class="tools-panel">
-    <slot name="tools">
-      <div style="color: #666;">Tools will appear here</div>
+  <div class="symbols-panel">
+    <slot name="symbols">
+      <div style="color: #666;">No symbols created yet</div>
     </slot>
   </div>
 </div> 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { symbolManager, updateSymbol } from '../storage/symbols.svelte';
+  import { symbolManager, updateSymbol, deleteSymbol } from '../storage/symbols.svelte';
   import { type Symbol, type SymbolGroup } from '../storage/symbols.svelte';
 
   let editingSymbol: Symbol | null = null;
@@ -15,7 +15,7 @@
     editingSymbol = symbol;
   }
 
-  function deleteSymbol(id: string) {
+  function handleDeleteSymbol(id: string) {
     deleteSymbol(id);
   }
 

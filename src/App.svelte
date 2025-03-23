@@ -5,12 +5,12 @@
 </script>
 
 <div class="app">
-  <ImageViewer>
-    <div slot="symbols">
-      <SymbolList />
-    </div>
+  <ImageViewer>    
     <div slot="tools">
       <ToolPanel />
+    </div>
+    <div slot="symbols">
+      <SymbolList />
     </div>
   </ImageViewer>
 </div>
