@@ -113,6 +113,12 @@
   }
 
   function handleDragStart(event: DragEvent, symbol: Symbol) {
+    // Solo permitir drag & drop de símbolos no agrupados
+    if (symbol.groupId) {
+      event.preventDefault();
+      return;
+    }
+    
     draggedSymbol = symbol;
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
@@ -121,14 +127,17 @@
 
   function handleDragOver(event: DragEvent, symbol: Symbol | null = null, group: SymbolGroup | null = null) {
     event.preventDefault();
-    if (!draggedSymbol) return;
+    if (!draggedSymbol || draggedSymbol.groupId) return;
 
     if (group) {
       dragTargetGroup = group;
       dragTarget = null;
     } else if (symbol && symbol.id !== draggedSymbol.id) {
-      dragTarget = symbol;
-      dragTargetGroup = null;
+      // Solo permitir como target símbolos no agrupados
+      if (!symbol.groupId) {
+        dragTarget = symbol;
+        dragTargetGroup = null;
+      }
     }
   }
 
@@ -146,59 +155,59 @@
       }
     }
 
-    // Agregar el símbolo al grupo objetivo y actualizar symbolGroups
-    const updatedGroup = { ...group, symbols: [...group.symbols, symbol] };
-    symbolGroups = symbolGroups.map(g => 
-      g.id === group.id ? updatedGroup : g
-    );
-
-    // Actualizar el símbolo con el nuevo groupId y char
+    // Actualizar el grupo con el nuevo símbolo
+    const updatedSymbols = [...group.symbols, { ...symbol, groupId: group.id, char: group.char }];
+    
+    // Actualizar el grupo
+    const updatedGroup = { ...group, symbols: updatedSymbols };
+    symbolGroups = symbolGroups.map(g => g.id === group.id ? updatedGroup : g);
+    
+    // Actualizar el símbolo en el array principal
     symbols = symbols.map(s => 
       s.id === symbol.id ? { ...s, groupId: group.id, char: group.char } : s
     );
   }
 
+  function createNewGroup(symbol1: Symbol, symbol2: Symbol): SymbolGroup {
+    const newGroup: SymbolGroup = {
+      id: crypto.randomUUID(),
+      symbols: [symbol1, symbol2],
+      char: symbol2.char,
+      isCollapsed: false
+    };
+    
+    // Actualizar los símbolos con el nuevo groupId
+    symbols = symbols.map(s => {
+      if (s.id === symbol1.id || s.id === symbol2.id) {
+        return { ...s, groupId: newGroup.id, char: newGroup.char };
+      }
+      return s;
+    });
+    
+    // Agregar el nuevo grupo
+    symbolGroups = [...symbolGroups, newGroup];
+    
+    return newGroup;
+  }
+
   function handleDrop(event: DragEvent, targetSymbol: Symbol | null = null, targetGroup: SymbolGroup | null = null) {
     event.preventDefault();
-    if (!draggedSymbol) return;
+    if (!draggedSymbol || draggedSymbol.groupId) return;
 
-    // Si se soltó sobre un grupo
-    if (targetGroup) {
-      addSymbolToGroup(draggedSymbol, targetGroup);
-    }
-    // Si se soltó sobre un símbolo
-    else if (targetSymbol && targetSymbol.id !== draggedSymbol.id) {
-      // Si el símbolo objetivo está en un grupo, agregar al mismo grupo
-      if (targetSymbol.groupId) {
-        const group = symbolGroups.find(g => g.id === targetSymbol.groupId);
-        if (group) {
-          addSymbolToGroup(draggedSymbol, group);
-        }
-        return; // Importante: salir aquí para evitar crear un nuevo grupo
+    try {
+      // Caso 1: Se soltó directamente sobre un grupo
+      if (targetGroup) {
+        addSymbolToGroup(draggedSymbol, targetGroup);
       }
-      
-      // Solo crear un nuevo grupo si ninguno de los símbolos está en un grupo
-      if (!draggedSymbol.groupId && !targetSymbol.groupId) {
-        const newGroup: SymbolGroup = {
-          id: crypto.randomUUID(),
-          symbols: [draggedSymbol, targetSymbol],
-          char: targetSymbol.char,
-          isCollapsed: false
-        };
-        
-        // Actualizar symbolGroups
-        symbolGroups = [...symbolGroups, newGroup];
-        
-        // Actualizar los símbolos con el nuevo groupId
-        const symbolsToUpdate = [draggedSymbol.id, targetSymbol.id];
-        symbols = symbols.map(s => 
-          symbolsToUpdate.includes(s.id) 
-            ? { ...s, groupId: newGroup.id, char: newGroup.char }
-            : s
-        );
+      // Caso 2: Se soltó sobre un símbolo no agrupado
+      else if (targetSymbol && !targetSymbol.groupId && targetSymbol.id !== draggedSymbol.id) {
+        createNewGroup(draggedSymbol, targetSymbol);
       }
+    } catch (error) {
+      console.error('Error en handleDrop:', error);
     }
 
+    // Limpiar estado
     draggedSymbol = null;
     dragTarget = null;
     dragTargetGroup = null;
@@ -270,13 +279,9 @@
           {#if !group.isCollapsed}
             <div class="group-symbols" class:collapsed={group.isCollapsed}>
               {#each group.symbols as symbol (symbol.id)}
-                <div class="symbol-item"
-                     draggable="true"
-                     on:dragstart={(e) => handleDragStart(e, symbol)}
-                     on:dragover={(e) => handleDragOver(e, symbol)}
-                     on:drop={(e) => handleDrop(e, symbol)}
-                     on:dragend={handleDragEnd}
-                     class:drag-target={dragTarget?.id === symbol.id}>
+                <div class="symbol-item not-draggable"
+                     on:dragover={(e) => e.preventDefault()}
+                     on:drop={(e) => e.preventDefault()}>
                   <div class="symbol-image">
                     <img src={symbol.imageUrl} alt={symbol.char} />
                   </div>
@@ -531,5 +536,14 @@
   .drag-target-group {
     border: 2px dashed #ff3e00;
     background: #fff8f7;
+  }
+
+  .symbol-item.not-draggable {
+    cursor: default;
+    opacity: 0.9;
+  }
+
+  .symbol-item.not-draggable:hover {
+    background: #f8f8f8;
   }
 </style> 
