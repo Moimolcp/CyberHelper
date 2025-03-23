@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
 
-  const dispatch = createEventDispatcher();
+  import { updateTool } from '../storage/symbols.svelte';
+
 
   let activeToolId: string | null = null;
   let gridCharCount: number = 0;
@@ -12,7 +12,7 @@
       id: 'select',
       icon: '◰',
       name: 'Select',
-      action: () => dispatch('tool', { type: 'select' })
+      action: () => updateTool({ type: 'select' })
     },
     {
       id: 'grid',
@@ -26,7 +26,13 @@
       id: 'delete',
       icon: '✗',
       name: 'Delete Last',
-      action: () => dispatch('tool', { type: 'delete' })
+      action: () => updateTool({ type: 'delete' })
+    },
+    {
+      id: 'link',
+      icon: '↔',
+      name: 'Link',
+      action: () => updateTool({ type: 'link' })
     }
   ];
 
@@ -41,7 +47,7 @@
 
   function handleGridSubmit() {
     if (gridCharCount > 0) {
-      dispatch('tool', { 
+      updateTool({ 
         type: 'grid', 
         charCount: gridCharCount 
       });

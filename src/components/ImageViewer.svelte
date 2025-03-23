@@ -1,5 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+  import { symbolManager } from '../storage/symbols.svelte';
+  import { addSymbol, deleteSymbol, updateSymbol } from '../storage/symbols.svelte';
+
+  import { toolManager } from '../storage/symbols.svelte';
+  import type { Symbol } from '../storage/symbols.svelte';
   const dispatch = createEventDispatcher();
 
   interface ImageTab {
@@ -30,29 +35,29 @@
     symbolIds?: string[]; // Array de IDs de los símbolos creados por esta grid
   }
 
-  let imageTabs: ImageTab[] = [];
-  let selectedGrid: Grid | null = null;
-  let selectionStart: { x: number; y: number } | null = null;
-  let selectionEnd: { x: number; y: number } | null = null;
+
+
+  let imageTabs = $state<ImageTab[]>([]);
+  let selectedGrid = $state<Grid | null>(null);
+  let selectionStart = $state<{ x: number; y: number } | null>(null);
+  let selectionEnd = $state<{ x: number; y: number } | null>(null);
   let imageContainer: HTMLElement;
-  let activeTabId: string | null = null;
-  let selections: Selection[] = [];
-  let imageElement: HTMLImageElement | null = null;
-  let containerDimensions = { width: 0, height: 0 };
-  let resizeCounter = 0; // Contador para forzar actualizaciones
+  let activeTabId = $state<string | null>(null);
+  let selections = $state<Selection[]>([]);
+  let imageElement = $state<HTMLImageElement | null>(null);
+  let containerDimensions = $state({ width: 0, height: 0 });
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null;
-  let canvasScale = 1;
-  let imageOffset = { x: 0, y: 0 };
-  let zoomLevel = 1;
-  let isDragging = false;
-  let lastMousePos = { x: 0, y: 0 };
-  let isGridMode = false;
-  let gridCharCount = 0;
-  let isAdjustingGrid = false;
-  let adjustingCellIndex: number | null = null;
-  let initialAdjustX: number | null = null;
-  let adjustingSelectionId: string | null = null;
+  let imageOffset = $state({ x: 0, y: 0 });
+  let zoomLevel = $state(1);
+  let isDragging = $state(false);
+  let lastMousePos = $state({ x: 0, y: 0 });
+  let isGridMode = $state(false);
+  let gridCharCount = $state(0);
+  let isAdjustingGrid = $state(false);
+  let adjustingCellIndex = $state<number | null>(null);
+  let initialAdjustX = $state<number | null>(null);
+  let adjustingSelectionId = $state<string | null>(null);
 
   // Función para actualizar las dimensiones del contenedor
   function updateContainerDimensions() {
@@ -62,7 +67,6 @@
         width: rect.width,
         height: rect.height
       };
-      resizeCounter++; // Incrementar el contador para forzar la actualización
     }
   }
 
@@ -124,46 +128,9 @@
     };
   }
 
-  function getRelativeCoordinates(x: number, y: number): { xPercent: number, yPercent: number } {
-    if (!imageElement) return { xPercent: 0, yPercent: 0 };
-
-    const imgRect = imageElement.getBoundingClientRect();
-    const containerRect = imageContainer.getBoundingClientRect();
-
-    // Calcular el área real que ocupa la imagen dentro del contenedor
-    const imageAspectRatio = imageElement.naturalWidth / imageElement.naturalHeight;
-    const containerAspectRatio = containerRect.width / containerRect.height;
-
-    let imageDisplayWidth, imageDisplayHeight;
-
-    if (containerAspectRatio > imageAspectRatio) {
-      // La altura es el factor limitante
-      imageDisplayHeight = containerRect.height;
-      imageDisplayWidth = imageDisplayHeight * imageAspectRatio;
-    } else {
-      // El ancho es el factor limitante
-      imageDisplayWidth = containerRect.width;
-      imageDisplayHeight = imageDisplayWidth / imageAspectRatio;
-    }
-
-    // Calcular los márgenes donde comienza la imagen
-    const imageOffsetX = (containerRect.width - imageDisplayWidth) / 2;
-    const imageOffsetY = (containerRect.height - imageDisplayHeight) / 2;
-
-    // Convertir coordenadas a relativas a la imagen real
-    const relX = x - (containerRect.left + imageOffsetX);
-    const relY = y - (containerRect.top + imageOffsetY);
-
-    // Convertir a porcentajes del tamaño de la imagen
-    return {
-      xPercent: (relX / imageDisplayWidth) * 100,
-      yPercent: (relY / imageDisplayHeight) * 100
-    };
-  }
-
+ 
   function loadImage(url: string) {
     const img = new Image();
-    img.crossOrigin = "anonymous";  // Añadir esto para evitar problemas CORS
     img.onload = () => {
       imageElement = img;
       if (canvas && !ctx) {
@@ -176,9 +143,11 @@
     img.src = url;
   }
 
-  $: if (activeTab?.imageUrl) {
-    loadImage(activeTab.imageUrl);
-  }
+  $effect(() => {
+    if (activeTab?.imageUrl) {
+      loadImage(activeTab.imageUrl);
+    }
+  });
 
   function handleFileUpload(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -204,24 +173,12 @@
     activeTabId = tabId;
   }
 
-  function toggleGrid(rows: number, cols: number) {
-    if (selectedGrid?.rows === rows && selectedGrid?.cols === cols) {
-      selectedGrid = null;
-    } else {
-      selectedGrid = { rows, cols };
-    }
-  }
-
-  // Asegurarnos de que imageElement existe antes de usarlo
-  function isImageLoaded(): boolean {
-    return imageElement !== null;
-  }
-
   function handleWheel(event: WheelEvent) {
     event.preventDefault();
     
     const zoomSpeed = 0.1;
     const mousePos = getCanvasCoordinates(event);
+    
     
     // Calcular el zoom anterior y nuevo
     const oldZoom = zoomLevel;
@@ -405,22 +362,18 @@
     updateCanvas();
   }
 
-  function removeSelection(id: string) {
-    const selection = selections.find(s => s.id === id);
+  function removeSelection(id: string): void {
+    const selection = selections.find((s: Selection) => s.id === id);
     if (selection?.symbolIds) {
-      // Notificar la eliminación de cada símbolo asociado
-      selection.symbolIds.forEach(symbolId => {
-        dispatch('deleteSymbol', {
-          type: 'delete',
-          id: symbolId
-        });
+      selection.symbolIds.forEach((symbolId: string) => {
+        deleteSymbol(symbolId);
       });
     }
-    selections = selections.filter(s => s.id !== id);
+    selections = selections.filter((s: Selection) => s.id !== id);
     updateCanvas();
   }
 
-  async function createSymbolFromSelection(selection: Selection) {
+  function createSymbolFromSelection(selection: Selection): void {
     if (!activeTab) return;
     
     const canvas = document.createElement('canvas');
@@ -430,44 +383,38 @@
     const img = new Image();
     img.src = activeTab.imageUrl;
     
-    await new Promise((resolve) => {
-      img.onload = () => {
-        // Convertir porcentajes a píxeles en la imagen original
-        const realX = (selection.xPercent / 100) * img.naturalWidth;
-        const realY = (selection.yPercent / 100) * img.naturalHeight;
-        const realWidth = (selection.widthPercent / 100) * img.naturalWidth;
-        const realHeight = (selection.heightPercent / 100) * img.naturalHeight;
+    img.onload = async () => {
+      const realX = (selection.xPercent / 100) * img.naturalWidth;
+      const realY = (selection.yPercent / 100) * img.naturalHeight;
+      const realWidth = (selection.widthPercent / 100) * img.naturalWidth;
+      const realHeight = (selection.heightPercent / 100) * img.naturalHeight;
 
-        // Asegurarse de que las coordenadas estén dentro de los límites
-        const finalX = Math.max(0, Math.min(realX, img.naturalWidth));
-        const finalY = Math.max(0, Math.min(realY, img.naturalHeight));
-        const finalWidth = Math.min(realWidth, img.naturalWidth - finalX);
-        const finalHeight = Math.min(realHeight, img.naturalHeight - finalY);
+      canvas.width = realWidth;
+      canvas.height = realHeight;
+      
+      ctx.drawImage(
+        img,
+        realX,
+        realY,
+        realWidth,
+        realHeight,
+        0,
+        0,
+        realWidth,
+        realHeight
+      );
 
-        canvas.width = finalWidth;
-        canvas.height = finalHeight;
-        
-        ctx.drawImage(
-          img,
-          finalX,
-          finalY,
-          finalWidth,
-          finalHeight,
-          0,
-          0,
-          finalWidth,
-          finalHeight
-        );
+      const croppedImageUrl = canvas.toDataURL('image/png');
+      
+      const symbolId = addSymbol({
+        id: crypto.randomUUID(),
+        imageUrl: croppedImageUrl,
+        char: ''
+      });
 
-        const croppedImageUrl = canvas.toDataURL('image/png');
-        
-        dispatch('createSymbol', {
-          imageUrl: croppedImageUrl,
-          value: ''
-        });
-        resolve(null);
-      };
-    });
+      // Update the selection with the new symbol ID
+      selection.symbolIds = [symbolId];
+    };
   }
 
   function updateCanvas() {
@@ -612,22 +559,18 @@
            y <= dimensions.y + dimensions.height;
   }
 
-  export function handleToolEvent(event: CustomEvent) {
-    const { type, charCount } = event.detail;
-    if (type === 'grid') {
+  $effect(() => {
+    if (toolManager.tool.type === 'grid') {
       isGridMode = true;
-      gridCharCount = charCount;
-    } else if (type === 'delete') {
+      gridCharCount = toolManager.tool.charCount;
+    } else if (toolManager.tool.type === 'delete') {
       // Eliminar la última selección creada y sus símbolos asociados
       if (selections.length > 0) {
         const lastSelection = selections[selections.length - 1];
         // Si la selección tiene símbolos asociados, eliminarlos primero
         if (lastSelection.symbolIds) {
           lastSelection.symbolIds.forEach(symbolId => {
-            dispatch('deleteSymbol', {
-              type: 'delete',
-              id: symbolId
-            });
+            deleteSymbol(symbolId);
           });
         }
         // Luego eliminar la selección
@@ -637,9 +580,9 @@
     } else {
       isGridMode = false;
     }
-  }
+  });
 
-  function createGridSymbols(selection: Selection) {
+  function createGridSymbols(selection: Selection): void {
     if (!activeTab) return;
 
     const img = new Image();
@@ -651,12 +594,12 @@
       const realWidth = (selection.widthPercent / 100) * img.naturalWidth;
       const realHeight = (selection.heightPercent / 100) * img.naturalHeight;
 
-      // Crear un array para almacenar los IDs de los símbolos
+      // Create a symbol for each cell
       const symbolIds: string[] = [];
+      for (let i = 0; i < (selection.gridCells?.length ?? 0); i++) {
+        const cell = selection.gridCells?.[i];
+        if (!cell) continue;
 
-      // Crear un símbolo para cada celda
-      for (let i = 0; i < selection.gridCells!.length; i++) {
-        const cell = selection.gridCells![i];
         const cellCanvas = document.createElement('canvas');
         const cellCtx = cellCanvas.getContext('2d');
         if (!cellCtx) continue;
@@ -680,18 +623,15 @@
         );
 
         const imageUrl = cellCanvas.toDataURL('image/png');
-        const symbolId = crypto.randomUUID();
-        symbolIds.push(symbolId);
-        
-        dispatch('createSymbol', {
-          type: 'create',
-          id: symbolId,
+        const symbolId = addSymbol({
+          id: crypto.randomUUID(),
           imageUrl: imageUrl,
           char: String.fromCharCode(65 + i) // A, B, C, etc.
         });
+        symbolIds.push(symbolId);
       }
 
-      // Guardar los IDs de los símbolos en la selección
+      // Save the symbol IDs in the selection
       selection.symbolIds = symbolIds;
     };
   }
@@ -737,9 +677,7 @@
           );
 
           const imageUrl = cellCanvas.toDataURL('image/png');
-          dispatch('updateSymbol', {
-            type: 'update',
-            id: symbolId,
+          updateSymbol(symbolId, {
             imageUrl: imageUrl
           });
 
@@ -751,33 +689,7 @@
     });
   }
 
-  export function handleSymbolDelete(symbolId: string) {
-    // Encontrar todas las selecciones que contienen este símbolo
-    const selectionsToUpdate = selections.filter(selection => 
-      selection.symbolIds?.includes(symbolId)
-    );
-
-    // Actualizar cada selección que contenga el símbolo
-    selectionsToUpdate.forEach(selection => {
-      if (selection.symbolIds) {
-        // Si la selección es una grid y tiene más símbolos, solo eliminar el símbolo
-        if (selection.gridCells && selection.symbolIds.length > 1) {
-          const symbolIndex = selection.symbolIds.indexOf(symbolId);
-          if (symbolIndex !== -1) {
-            selection.symbolIds = selection.symbolIds.filter(id => id !== symbolId);
-            selection.gridCells = selection.gridCells.filter((_, i) => i !== symbolIndex);
-          }
-        } else {
-          // Si no es una grid o es el último símbolo, eliminar la selección completa
-          removeSelection(selection.id);
-        }
-      }
-    });
-
-    updateCanvas();
-  }
-
-  $: activeTab = imageTabs.find(tab => tab.id === activeTabId);
+  const activeTab = $derived(imageTabs.find((tab: ImageTab) => tab.id === activeTabId));
 </script>
 
 <style>
