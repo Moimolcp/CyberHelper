@@ -279,7 +279,7 @@
         const nextCell = cells[adjustingCellIndex + 1];
 
         // Asegurarse de que ninguna celda sea más pequeña que un mínimo
-        const minWidth = 10; // 10% del ancho total
+        const minWidth = 1; // 10% del ancho total
         const maxAdjustment = Math.min(
           currentCell.widthPercent - minWidth,
           nextCell.widthPercent + deltaPercent - minWidth
@@ -708,7 +708,7 @@
 
   .image-viewer {
     display: grid;
-    grid-template-columns: 250px 1fr 250px;
+    grid-template-columns: 200px 1fr 200px;
     grid-template-rows: auto 1fr;
     height: 100%;
     width: 100%;
@@ -733,8 +733,8 @@
     background: #f8f8f8;
     border-right: 1px solid #ddd;
     overflow-y: auto;
-    padding: 1rem;
     height: 100%;
+    padding: 0;
   }
 
   .main-content {
@@ -749,8 +749,8 @@
     background: #f8f8f8;
     border-left: 1px solid #ddd;
     overflow-y: auto;
-    padding: 1rem;
     height: 100%;
+    padding: 8px;
   }
 
   .upload-container {

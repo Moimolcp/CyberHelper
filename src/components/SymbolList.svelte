@@ -3,6 +3,10 @@
   import { type Symbol, type SymbolGroup } from '../storage/symbols.svelte';
 
   let editingSymbol: Symbol | null = null;
+  let isZoomed = $state(false);
+
+  const symbols = $derived(symbolManager.symbols);
+  let previewSymbol: Symbol | null = $state(null);
 
   function handleSaveSymbol() {
     if (editingSymbol) {
@@ -19,47 +23,51 @@
     deleteSymbol(id);
   }
 
+  function handleSymbolClick(symbol: Symbol) {
+    previewSymbol = previewSymbol?.id === symbol.id ? null : symbol;
+    isZoomed = false;
+  }
 
+  function toggleZoom() {
+    isZoomed = !isZoomed;
+  }
 </script>
-
-
-
 
 <div class="symbol-list">
   <h2>Symbols</h2>
   
-  {#if symbolManager.symbols.length === 0}
+  {#if symbols.length === 0}
     <div class="empty-state">No symbols created yet</div>
   {:else}
-    <div class="symbols-container">
-      
-      <!-- Símbolos no agrupados -->
-      {#each symbolManager.symbols.filter(s => !s.groupId) as symbol (symbol.id)}
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="symbol-item"
-             draggable="true"             
-             ></div>
-          <div class="symbol-image">
-            <img src={symbol.imageUrl} alt={symbol.char} />
-          </div>
-          <div class="symbol-info">
-            {#if editingSymbol?.id === symbol.id}
-              <input
-                type="text"
-                bind:value={editingSymbol.char}
-                onkeydown={(e) => e.key === 'Enter' && handleSaveSymbol()}
-                maxlength="1"
-              />
-              <button class="action-btn" onclick={handleSaveSymbol}>✓</button>
-              <button class="action-btn cancel" onclick={() => editingSymbol = null}>×</button>
-            {:else}
-              <span class="symbol-char">{symbol.char || 'A'}</span>
-              <button class="action-btn" onclick={() => handleEditSymbol(symbol)}>Edit</button>
-              <button class="action-btn delete" onclick={() => deleteSymbol(symbol.id)}>×</button>
-            {/if}
-          </div>
+    <div class="symbols-grid">
+      {#each symbols as symbol (symbol.id)}
+        <div 
+          class="symbol-item" 
+          class:active={previewSymbol?.id === symbol.id}
+          on:click={() => handleSymbolClick(symbol)}
+        >
+          <img 
+            src={symbol.imageUrl} 
+            alt="Symbol" 
+            class="symbol-image"
+          />
+        </div>
       {/each}
     </div>
+
+    {#if previewSymbol}
+      <div class="preview-overlay" on:click={() => previewSymbol = null}>
+        <div class="preview-content" on:click|stopPropagation>
+          <img 
+            src={previewSymbol.imageUrl} 
+            alt="Symbol preview" 
+            class="preview-image"
+            class:zoomed={isZoomed}
+            on:click={toggleZoom}
+          />
+        </div>
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -67,13 +75,13 @@
   .symbol-list {
     height: 100%;
     overflow-y: auto;
-    padding: 0.5rem;
+    padding: 8px;
     background: white;
   }
 
   h2 {
     margin-top: 0;
-    margin-bottom: 0.5rem;
+    margin-bottom: 8px;
     color: #333;
     font-size: 1rem;
   }
@@ -85,37 +93,83 @@
     font-size: 0.9rem;
   }
 
-  .symbols-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+  .symbols-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 8px;
   }
 
   .symbol-item {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.15rem;
+    aspect-ratio: 1;
     border: 1px solid #ddd;
     border-radius: 4px;
-    background: #f8f8f8;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+  }
+
+  .symbol-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .symbol-item.active {
+    border-color: #ff3e00;
+    box-shadow: 0 0 0 2px #ff3e00;
   }
 
   .symbol-image {
-    width: 30px;
-    height: 30px;
-    border: 1px solid #ddd;
-    border-radius: 2px;
-    overflow: hidden;
-    background: white;
-    flex-shrink: 0;
-  }
-
-  .symbol-image img {
     width: 100%;
     height: 100%;
     object-fit: contain;
     display: block;
+  }
+
+  .preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .preview-content {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+    max-width: 95%;
+    max-height: 95vh;
+    min-width: 500px;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .preview-image {
+    min-width: 500px;
+    min-height: 500px;
+    max-width: 90vw;
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    cursor: zoom-in;
+    transition: transform 0.3s ease;
+  }
+
+  .preview-image.zoomed {
+    cursor: zoom-out;
+    transform: scale(2);
   }
 
   .symbol-info {
