@@ -6,7 +6,9 @@
   let isZoomed = $state(false);
 
   const symbols = $derived(symbolManager.symbols);
+  const symbolGroups = $derived(symbolManager.groups);
   let previewSymbol: Symbol | null = $state(null);
+  let selectedGroup: SymbolGroup | null = $state(null);
 
   function handleSaveSymbol() {
     if (editingSymbol) {
@@ -31,52 +33,128 @@
   function toggleZoom() {
     isZoomed = !isZoomed;
   }
+
+  function handleGroupClick(group: SymbolGroup) {
+    selectedGroup = selectedGroup?.id === group.id ? null : group;
+  }
 </script>
 
 <div class="symbol-list">
   <h2>Symbols</h2>
-  
-  {#if symbols.length === 0}
-    <div class="empty-state">No symbols created yet</div>
-  {:else}
-    <div class="symbols-grid">
-      {#each symbols as symbol (symbol.id)}
-        <div 
-          class="symbol-item" 
-          class:active={previewSymbol?.id === symbol.id}
-          on:click={() => handleSymbolClick(symbol)}
-        >
-          <img 
-            src={symbol.imageUrl} 
-            alt="Symbol" 
-            class="symbol-image"
-          />
-        </div>
-      {/each}
-    </div>
+  <section class="symbols-section">    
+    {#if symbols.length === 0}
+      <div class="empty-state">No symbols created yet</div>
+    {:else}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        {#each symbols as symbol (symbol.id)}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <div 
+            class="symbol-item" 
+            class:active={previewSymbol?.id === symbol.id}
+            onclick={() => handleSymbolClick(symbol)}
+          >
+            <img 
+              src={symbol.imageUrl} 
+              alt="Symbol" 
+              class="symbol-image"
+            />
+          </div>
+        {/each}
+    {/if}
+  </section>
 
-    {#if previewSymbol}
-      <div class="preview-overlay" on:click={() => previewSymbol = null}>
-        <div class="preview-content" on:click|stopPropagation>
-          <img 
-            src={previewSymbol.imageUrl} 
-            alt="Symbol preview" 
-            class="preview-image"
-            class:zoomed={isZoomed}
-            on:click={toggleZoom}
-          />
-        </div>
+  <section class="groups-section">
+    <h2>Symbol Groups</h2>
+    
+    {#if symbolGroups.length === 0}
+      <div class="empty-state">No groups created yet</div>
+    {:else}
+      <div class="groups-list">
+        {#each symbolGroups as group (group.id)}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div 
+            class="group-item"
+            class:active={selectedGroup?.id === group.id}
+            onclick={() => handleGroupClick(group)}
+          >
+            <div class="group-header">
+              <span class="group-name">{group.id}</span>
+              <span class="group-count">({group.symbols.length})</span>
+            </div>
+            {#if selectedGroup?.id === group.id}
+              <div class="group-symbols">
+                {#each group.symbols as symbolId}
+                  {#if symbols.find(s => s.id === symbolId)}
+                    <div class="group-symbol-item">
+                      <img 
+                        src={symbols.find(s => s.id === symbolId)?.imageUrl} 
+                        alt="Group Symbol" 
+                        class="symbol-image"
+                      />
+                    </div>
+                  {/if}
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/each}
       </div>
     {/if}
+  </section>
+
+  {#if previewSymbol}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <div class="preview-overlay" onclick={() => previewSymbol = null}>
+      <div class="preview-content">
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+        <img 
+          src={previewSymbol.imageUrl} 
+          alt="Symbol preview" 
+          class="preview-image"
+          class:zoomed={isZoomed}
+          onclick={toggleZoom}
+        />
+      </div>
+    </div>
   {/if}
 </div>
 
 <style>
   .symbol-list {
     height: 100%;
-    overflow-y: auto;
     padding: 8px;
     background: white;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .symbols-section {
+    background: white;
+    border-radius: 4px;
+    padding: 1px;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-content: flex-start;
+    justify-content: space-evenly;
+    overflow-y: auto;
+  }
+
+  .groups-section {
+    background: white;
+    border-radius: 4px;
+    padding: 8px;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
   }
 
   h2 {
@@ -84,6 +162,7 @@
     margin-bottom: 8px;
     color: #333;
     font-size: 1rem;
+    flex: 0 0 auto;
   }
 
   .empty-state {
@@ -93,30 +172,96 @@
     font-size: 0.9rem;
   }
 
-  .symbols-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  .groups-list {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
+    overflow-y: auto;
+    padding-right: 4px; /* Space for scrollbar */
+  }
+
+  .group-item {
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .group-item:hover {
+    border-color: #ff3e00;
+  }
+
+  .group-item.active {
+    border-color: #ff3e00;
+    box-shadow: 0 0 0 1px #ff3e00;
+  }
+
+  .group-header {
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+  }
+
+  .group-name {
+    font-weight: 500;
+    color: #333;
+  }
+
+  .group-count {
+    color: #666;
+    font-size: 0.9em;
+  }
+
+  .group-symbols {
+    padding: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 4px;
+    background: white;
+    border-top: 1px solid #ddd;
+  }
+
+  .group-symbol-item {
+    aspect-ratio: 1;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    overflow: hidden;
+    background: white;
+  }
+
+  .group-symbol-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
   }
 
   .symbol-item {
-    aspect-ratio: 1;
     border: 1px solid #ddd;
     border-radius: 4px;
     overflow: hidden;
     cursor: pointer;
     transition: all 0.2s ease;
     background: white;
+    width: 50px;
+    height: 50px;
+    flex: 0 0 auto;
   }
 
   .symbol-item:hover {
     transform: scale(1.05);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1;
   }
 
   .symbol-item.active {
     border-color: #ff3e00;
     box-shadow: 0 0 0 2px #ff3e00;
+    z-index: 2;
   }
 
   .symbol-image {
@@ -248,43 +393,6 @@
     overflow: hidden;
   }
 
-  .group-header {
-    background: #f0f0f0;
-    padding: 0.15rem 0.35rem;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    border-bottom: 1px solid #ddd;
-  }
-
-  .group-count {
-    color: #666;
-    font-size: 0.8rem;
-  }
-
-  .group-symbols {
-    padding: 0.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .group-symbols.collapsed {
-    display: none;
-  }
-
-  .drag-target {
-    border: 2px dashed #ff3e00;
-  }
-
-  .symbol-item {
-    cursor: move;
-  }
-
-  .symbol-item:hover {
-    background: #f5f5f5;
-  }
-
   .group-actions {
     margin-left: auto;
     display: flex;
@@ -320,9 +428,16 @@
     color: #333;
   }
 
-  .drag-target-group {
+  .drag-target {
     border: 2px dashed #ff3e00;
-    background: #fff8f7;
+  }
+
+  .symbol-item {
+    cursor: move;
+  }
+
+  .symbol-item:hover {
+    background: #f5f5f5;
   }
 
   .symbol-item.not-draggable {

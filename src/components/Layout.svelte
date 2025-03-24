@@ -11,7 +11,7 @@
   function handleMouseDown(event: MouseEvent, panel: string) {
     const target = event.target as HTMLElement;
     if (!target.closest('.panel-resizer')) return;
-
+    event.preventDefault();
     isResizing = true;
     currentPanel = panel;
     startX = event.clientX;
