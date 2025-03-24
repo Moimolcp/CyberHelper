@@ -7,7 +7,7 @@ export interface Symbol {
 
 
 export interface Tool {
-    type: 'grid' | 'select' | 'link' | 'delete';
+    type: 'grid' | 'select' | 'link' | 'delete' | 'search';
     charCount: number;
 }
 

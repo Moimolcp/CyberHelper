@@ -33,6 +33,12 @@
       icon: '↔',
       name: 'Link',
       action: () => updateTool({ type: 'link' })
+    },
+    {
+      id: 'search',
+      icon: '🔍',
+      name: 'Search',
+      action: () => updateTool({ type: 'search' })
     }
   ];
 

@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { getWordsByQuery } from '../lib/db';
   import { symbolManager, updateSymbol, deleteSymbol, createGroup, addSymbolToGroup, deleteGroup, updateGroup } from '../storage/symbols.svelte';
   import { type Symbol, type SymbolGroup } from '../storage/symbols.svelte';
+
 
   let editingSymbol: Symbol | null = $state(null);
   let isZoomed = $state(false);
