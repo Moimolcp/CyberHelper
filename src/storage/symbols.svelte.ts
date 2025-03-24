@@ -54,3 +54,44 @@ export function deleteSymbol(id: string) {
 export function updateTool(updates: Partial<Tool>) {
     toolManager.tool = { ...toolManager.tool, ...updates };
 }
+
+export function addSymbolGroup(group: SymbolGroup) {
+    symbolManager.groups = [...symbolManager.groups, group];
+}
+
+export function deleteSymbolGroup(id: string) {
+    symbolManager.groups = symbolManager.groups.filter(g => g.id !== id);
+}
+
+export function updateSymbolGroup(id: string, updates: Partial<SymbolGroup>) {
+    symbolManager.groups = symbolManager.groups.map(group => 
+        group.id === id ? { ...group, ...updates } : group
+    );
+}
+
+export function createGroup(symbolsIds: string[]) : SymbolGroup {
+    const group: SymbolGroup = {
+        id: crypto.randomUUID(),
+        symbols: symbolsIds,
+        char: "?"
+    }
+    addSymbolGroup(group);
+    return group;
+}
+
+export function addSymbolToGroup(groupId: string, symbolId: string) {
+    const group = symbolManager.groups.find(g => g.id === groupId);
+    if (group) {
+        group.symbols.push(symbolId);
+    }
+}
+
+export function deleteGroup(groupId: string) {
+    symbolManager.groups = symbolManager.groups.filter(g => g.id !== groupId);
+}
+
+export function updateGroup(groupId: string, updates: Partial<SymbolGroup>) {
+    symbolManager.groups = symbolManager.groups.map(group => 
+        group.id === groupId ? { ...group, ...updates } : group
+    );
+}
