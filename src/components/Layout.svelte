@@ -25,19 +25,11 @@
 
   function handleMouseMove(event: MouseEvent) {
     if (!isResizing || !currentPanel) return;
-
     const panelElement = document.querySelector(`.${currentPanel}-panel`) as HTMLElement;
     const diff = event.clientX - startX;
-    
-    let newWidth;
-    if (currentPanel === 'tools') {
-      newWidth = startWidth + diff;
-    } else {
-      newWidth = startWidth - diff;
-    }
-
+    let newWidth = startWidth - diff;
     // Limitar el ancho mínimo y máximo
-    newWidth = Math.max(100, Math.min(400, newWidth));
+    newWidth = Math.max(100, Math.min(1000, newWidth));
     panelElement.style.flex = `0 0 ${newWidth}px`;
   }
 
@@ -54,6 +46,7 @@
       document.removeEventListener('mouseup', handleMouseUp);
     };
   });
+
 </script>
 
 <style>
