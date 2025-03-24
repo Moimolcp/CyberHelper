@@ -1,48 +1,18 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { symbolManager } from '../storage/symbols.svelte';
   import { addSymbol, deleteSymbol, updateSymbol } from '../storage/symbols.svelte';
-
   import { toolManager } from '../storage/symbols.svelte';
   import type { Symbol } from '../storage/symbols.svelte';
-  const dispatch = createEventDispatcher();
+  import type { ImageTab, Grid, GridCell, Selection } from '../types/image';
+  import Toolbar from './Toolbar.svelte';
 
-  interface ImageTab {
-    id: string;
-    name: string;
-    imageUrl: string;
-  }
-
-  interface Grid {
-    rows: number;
-    cols: number;
-  }
-
-  interface GridCell {
-    startPercent: number;
-    widthPercent: number;
-  }
-
-  interface Selection {
-    id: string;
-    // Coordenadas en porcentaje (0-100)
-    xPercent: number;
-    yPercent: number;
-    widthPercent: number;
-    heightPercent: number;
-    isPermanent: boolean;
-    gridCells?: GridCell[];
-    symbolIds?: string[]; // Array de IDs de los símbolos creados por esta grid
-  }
-
-
-
-  let imageTabs = $state<ImageTab[]>([]);
+  let {imageTabs} = $props();
+  let activeTabId = $derived(imageTabs[0].id);
   let selectedGrid = $state<Grid | null>(null);
   let selectionStart = $state<{ x: number; y: number } | null>(null);
   let selectionEnd = $state<{ x: number; y: number } | null>(null);
   let imageContainer: HTMLElement;
-  let activeTabId = $state<string | null>(null);
   let selections = $state<Selection[]>([]);
   let imageElement = $state<HTMLImageElement | null>(null);
   let containerDimensions = $state({ width: 0, height: 0 });
@@ -53,6 +23,7 @@
   let isDragging = $state(false);
   let lastMousePos = $state({ x: 0, y: 0 });
   let isGridMode = $state(false);
+  let isDeleteMode = $state(false);
   let gridCharCount = $state(0);
   let isAdjustingGrid = $state(false);
   let adjustingCellIndex = $state<number | null>(null);
@@ -149,24 +120,11 @@
     }
   });
 
-  function handleFileUpload(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        const newTab: ImageTab = {
-          id: crypto.randomUUID(),
-          name: file.name,
-          imageUrl: e.target?.result as string
-        };
-        imageTabs = [...imageTabs, newTab];
-        activeTabId = newTab.id;
-      };
-      
-      reader.readAsDataURL(file);
-    }
+  function handleFileUpload(event: CustomEvent) {
+    const { id, name, imageUrl } = event.detail;
+    const newTab: ImageTab = { id, name, imageUrl };
+    imageTabs = [...imageTabs, newTab];
+    activeTabId = newTab.id;
   }
 
   function selectTab(tabId: string) {
@@ -257,6 +215,27 @@
         lastMousePos = canvasCoords;
         canvas.style.cursor = 'grab';
       }
+    }
+
+    if (toolManager.tool.type === 'delete') {
+      const dimensions = getImageDimensions();
+      // Buscar la selección que fue clickeada
+      const clickedSelection = selections.find(selection => {
+        const x = imageOffset.x + (selection.xPercent * dimensions.width / 100);
+        const y = imageOffset.y + (selection.yPercent * dimensions.height / 100);
+        const width = (selection.widthPercent * dimensions.width / 100);
+        const height = (selection.heightPercent * dimensions.height / 100);
+
+        return canvasCoords.x >= x && 
+               canvasCoords.x <= x + width && 
+               canvasCoords.y >= y && 
+               canvasCoords.y <= y + height;
+      });
+
+      if (clickedSelection) {
+        removeSelection(clickedSelection.id);
+      }
+      return; // Evitar crear una nueva selección mientras estamos en modo borrado
     }
   }
 
@@ -564,19 +543,7 @@
       isGridMode = true;
       gridCharCount = toolManager.tool.charCount;
     } else if (toolManager.tool.type === 'delete') {
-      // Eliminar la última selección creada y sus símbolos asociados
-      if (selections.length > 0) {
-        const lastSelection = selections[selections.length - 1];
-        // Si la selección tiene símbolos asociados, eliminarlos primero
-        if (lastSelection.symbolIds) {
-          lastSelection.symbolIds.forEach(symbolId => {
-            deleteSymbol(symbolId);
-          });
-        }
-        // Luego eliminar la selección
-        selections = selections.filter(s => s.id !== lastSelection.id);
-        updateCanvas();
-      }
+      isDeleteMode = true;
     } else {
       isGridMode = false;
     }
@@ -693,88 +660,12 @@
 </script>
 
 <style>
-  :global(body) {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    height: 100vh;
-  }
-
-  :global(#app) {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .image-viewer {
-    display: grid;
-    grid-template-columns: 200px 1fr 200px;
-    grid-template-rows: auto 1fr;
-    height: 100%;
-    width: 100%;
-    background: white;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-  }
-
-  .toolbar {
-    grid-column: 1 / -1;
-    display: flex;
-    padding: 0.5rem;
-    background: #f8f8f8;
-    border-bottom: 1px solid #ddd;
-    z-index: 10;
-  }
-
-  .symbols-panel {
-    background: #f8f8f8;
-    border-right: 1px solid #ddd;
-    overflow-y: auto;
-    height: 100%;
-    padding: 0;
-  }
-
-  .main-content {
+  .viewer-container {
     display: flex;
     flex-direction: column;
+    height: 100%;
+    width: 100%;
     overflow: hidden;
-    height: 100%;
-    background: white;
-  }
-
-  .tools-panel {
-    background: #f8f8f8;
-    border-left: 1px solid #ddd;
-    overflow-y: auto;
-    height: 100%;
-    padding: 8px;
-  }
-
-  .upload-container {
-    display: flex;
-    align-items: center;
-  }
-
-  .hidden {
-    display: none;
-  }
-
-  .upload-button {
-    background: #ff3e00;
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    border: none;
-    font-size: 0.9rem;
-    transition: background-color 0.2s;
-  }
-
-  .upload-button:hover {
-    background: #ff2d00;
   }
 
   .tabs-container {
@@ -854,70 +745,41 @@
   }
 </style>
 
-<div class="image-viewer">
-  <div class="toolbar">
-    <div class="upload-container">
-      <input
-        type="file"
-        accept="image/*"
-        on:change={handleFileUpload}
-        id="image-upload"
-        class="hidden"
-      />
-      <label for="image-upload" class="upload-button">
-        Upload Image
-      </label>
+<div class="viewer-container">
+  {#if imageTabs.length > 0}
+    <div class="tabs-container">
+      <div class="tab-list">
+        {#each imageTabs as tab}
+          <button
+            class="tab-button"
+            class:active={activeTabId === tab.id}
+            on:click={() => selectTab(tab.id)}
+          >
+            {tab.name}
+          </button>
+        {/each}
+      </div>
+
+      <div class="tab-content">
+        {#if activeTab}
+          <div class="image-container"
+               bind:this={imageContainer}>
+            <canvas
+              bind:this={canvas}
+              on:mousedown={handleMouseDown}
+              on:mousemove={handleMouseMove}
+              on:mouseup={handleMouseUp}
+              on:mouseleave={handleMouseUp}
+              on:wheel={handleWheel}
+              on:contextmenu|preventDefault
+            ></canvas>
+          </div>
+        {/if}
+      </div>
     </div>
-  </div>
-
-  <div class="tools-panel">
-    <slot name="tools">
-      <div style="color: #666;">Tools will appear here</div>
-    </slot>
-  </div>
-
-  <div class="main-content">
-    {#if imageTabs.length > 0}
-      <div class="tabs-container">
-        <div class="tab-list">
-          {#each imageTabs as tab}
-            <button
-              class="tab-button"
-              class:active={activeTabId === tab.id}
-              on:click={() => selectTab(tab.id)}
-            >
-              {tab.name}
-            </button>
-          {/each}
-        </div>
-
-        <div class="tab-content">
-          {#if activeTab}
-            <div class="image-container"
-                 bind:this={imageContainer}>
-              <canvas
-                bind:this={canvas}
-                on:mousedown={handleMouseDown}
-                on:mousemove={handleMouseMove}
-                on:mouseup={handleMouseUp}
-                on:mouseleave={handleMouseUp}
-                on:wheel={handleWheel}
-                on:contextmenu|preventDefault
-              ></canvas>
-            </div>
-          {/if}
-        </div>
-      </div>
-    {:else}
-      <div class="empty-state">
-        Upload an image to get started
-      </div>
-    {/if}
-  </div>
-
-  <div class="symbols-panel">
-    <slot name="symbols">
-      <div style="color: #666;">No symbols created yet</div>
-    </slot>
-  </div>
+  {:else}
+    <div class="empty-state">
+      Upload an image to get started
+    </div>
+  {/if}
 </div> 

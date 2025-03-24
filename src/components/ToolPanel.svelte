@@ -59,7 +59,6 @@
 
 <div class="tool-panel">
   <div class="tool-group">
-    <h3>Selection Tools</h3>
     {#each tools as tool}
       <button
         class="tool-button"
