@@ -73,7 +73,7 @@ export function createGroup(symbolsIds: string[]) : SymbolGroup {
     const group: SymbolGroup = {
         id: crypto.randomUUID(),
         symbols: symbolsIds,
-        char: "?"
+        char: "_"
     }
     addSymbolGroup(group);
     return group;

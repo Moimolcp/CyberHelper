@@ -46,8 +46,22 @@
     updateContainerDimensions();
   }
 
+  // Add this function to handle keyboard events
+  function handleKeyPress(event: KeyboardEvent) {
+    // Check if the key pressed is a number between 1-9
+    const num = parseInt(event.key);
+    if (!isNaN(num) && num >= 1 && num <= 9) {
+      gridCharCount = num;
+      isGridMode = true;
+      // Actualizar la herramienta actual para mantener sincronizado el estado
+      toolManager.tool.type = 'grid'
+      toolManager.tool.charCount = num;
+    }
+  }
+
   onMount(() => {
     window.addEventListener('resize', handleResize);
+    window.addEventListener('keypress', handleKeyPress);
     updateContainerDimensions();
     if (canvas) {
       ctx = canvas.getContext('2d');
@@ -63,6 +77,7 @@
 
   onDestroy(() => {
     window.removeEventListener('resize', handleResize);
+    window.removeEventListener('keypress', handleKeyPress);
     window.removeEventListener('resize', () => {
       requestAnimationFrame(updateCanvas);
     });
