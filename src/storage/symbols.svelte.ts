@@ -25,6 +25,8 @@ export const toolManager = $state({
     })
 })
 
+
+
 export const symbolManager = $state({
     symbols: <Symbol[]>([]),
     groups: <SymbolGroup[]>([])
@@ -94,4 +96,16 @@ export function updateGroup(groupId: string, updates: Partial<SymbolGroup>) {
     symbolManager.groups = symbolManager.groups.map(group => 
         group.id === groupId ? { ...group, ...updates } : group
     );
+}
+
+export function isSymbolInAnyGroup(symbolId1: string) {
+    console.log(symbolId1);
+    for (const group of symbolManager.groups) {
+        for (const symbolId of group.symbols) {
+            if (symbolId === symbolId1) {
+                return true;
+            }
+        }
+    }
+    return false;
 }

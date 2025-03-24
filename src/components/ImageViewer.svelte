@@ -135,6 +135,11 @@
     }
   });
 
+  $effect(() => {
+    const length = selections.length;
+        updateCanvas();
+  });
+
   function handleFileUpload(event: CustomEvent) {
     const { id, name, imageUrl } = event.detail;
     const newTab: ImageTab = { id, name, imageUrl };
@@ -480,7 +485,7 @@
       const y = imageOffset.y + (selection.yPercent * drawHeight / 100);
       const width = (selection.widthPercent * drawWidth / 100);
       const height = (selection.heightPercent * drawHeight / 100);
-      drawSelection(x, y, width, height, true, selection.gridCells);
+      drawSelection(x, y, width, height, true, selection.gridCells, selection.symbolIds);
     });
 
     // Dibujar la selección actual
@@ -503,7 +508,8 @@
     }
   }
 
-  function drawSelection(x: number, y: number, width: number, height: number, isPermanent: boolean, gridCells?: GridCell[]) {
+
+  function drawSelection(x: number, y: number, width: number, height: number, isPermanent: boolean, gridCells?: GridCell[], symbolIds?: string[]) {
     if (!ctx) return;
 
     ctx.save();
@@ -521,20 +527,36 @@
       ctx.lineWidth = 1;
       
       gridCells.forEach((cell, index) => {
+        const cellX = x + (width * cell.startPercent / 100);
+        const cellWidth = width * cell.widthPercent / 100;        
+        // Colorear el fondo de la celda si el símbolo está en un grupo
+        if (symbolIds && symbolIds[index] && ctx) {
+          const symbolId = symbolIds[index];
+          const isInGroup = symbolManager.groups.some(group => 
+            group.symbols.includes(symbolId)
+          );
+
+          if (isInGroup) {
+            ctx.fillStyle = 'rgba(255, 62, 0, 0.4)'; // Color naranja semi-transparente
+            ctx.fillRect(cellX, y, cellWidth, height);
+          }
+        }
+
+        // Dibujar líneas divisorias y manipuladores
         if (index < gridCells.length - 1 && ctx) {
-          const cellX = x + (width * cell.startPercent / 100) + (width * cell.widthPercent / 100);
+          const dividerX = cellX + cellWidth;
           
           // Dibujar línea divisoria
           ctx.beginPath();
-          ctx.moveTo(cellX, y);
-          ctx.lineTo(cellX, y + height);
+          ctx.moveTo(dividerX, y);
+          ctx.lineTo(dividerX, y + height);
           ctx.stroke();
 
           // Dibujar el manipulador de redimensionamiento
           ctx.fillStyle = 'white';
           ctx.strokeStyle = 'rgba(0, 123, 255, 0.8)';
           ctx.beginPath();
-          ctx.arc(cellX, y + height / 2, 4, 0, Math.PI * 2);
+          ctx.arc(dividerX, y + height / 2, 4, 0, Math.PI * 2);
           ctx.fill();
           ctx.stroke();
         }
@@ -570,7 +592,7 @@
     const img = new Image();
     img.src = activeTab.imageUrl;
     
-    img.onload = async () => {
+    
       const realX = (selection.xPercent / 100) * img.naturalWidth;
       const realY = (selection.yPercent / 100) * img.naturalHeight;
       const realWidth = (selection.widthPercent / 100) * img.naturalWidth;
@@ -615,7 +637,7 @@
 
       // Save the symbol IDs in the selection
       selection.symbolIds = symbolIds;
-    };
+
   }
 
   async function updateGridSymbols(selection: Selection) {
