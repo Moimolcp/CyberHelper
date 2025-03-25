@@ -1,7 +1,7 @@
 <script lang="ts">
   export let results: string[] = [];
   export let onSelect: (word: string) => void;
-  export let style: string = '';
+  export let style: string = "";
 </script>
 
 <div class="search-results" {style}>
@@ -9,7 +9,7 @@
     <h3>Possible Words</h3>
     <span class="count">{results.length} results</span>
   </div>
-  
+
   <div class="results-list">
     {#each results as result}
       <div class="result-item" onclick={() => onSelect(result)}>
@@ -23,7 +23,7 @@
   .search-results {
     background: white;
     border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     width: 300px;
     max-height: 400px;
     display: flex;
@@ -79,4 +79,4 @@
     padding: 2px 6px;
     border-radius: 12px;
   }
-</style> 
+</style>

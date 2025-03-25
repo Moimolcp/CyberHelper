@@ -1,8 +1,15 @@
 <script lang="ts">
-  import { getWordsByQuery } from '../lib/db';
-  import { symbolManager, updateSymbol, deleteSymbol, createGroup, addSymbolToGroup, deleteGroup, updateGroup } from '../storage/symbols.svelte';
-  import { type Symbol, type SymbolGroup } from '../storage/symbols.svelte';
-
+  import { getWordsByQuery } from "../lib/db";
+  import {
+    symbolManager,
+    updateSymbol,
+    deleteSymbol,
+    createGroup,
+    addSymbolToGroup,
+    deleteGroup,
+    updateGroup,
+  } from "../storage/symbols.svelte";
+  import { type Symbol, type SymbolGroup } from "../storage/symbols.svelte";
 
   let editingSymbol: Symbol | null = $state(null);
   let isZoomed = $state(false);
@@ -15,11 +22,10 @@
   const symbols = $derived(symbolManager.symbols);
   const symbolGroups = $derived(symbolManager.groups);
   const ungroupedSymbols = $derived(
-    symbols.filter(symbol => 
-      !symbolGroups.some(group => 
-        group.symbols.includes(symbol.id)
-      )
-    )
+    symbols.filter(
+      (symbol) =>
+        !symbolGroups.some((group) => group.symbols.includes(symbol.id)),
+    ),
   );
   let previewSymbol: Symbol | null = $state(null);
   let selectedGroup: SymbolGroup | null = $state(null);
@@ -40,9 +46,9 @@
   }
 
   function handleSymbolClick(symbol: Symbol) {
-
-    selectedSymbolIds = selectedSymbolIds.includes(symbol.id) ? selectedSymbolIds.filter(id => id !== symbol.id) : [...selectedSymbolIds, symbol.id];
-
+    selectedSymbolIds = selectedSymbolIds.includes(symbol.id)
+      ? selectedSymbolIds.filter((id) => id !== symbol.id)
+      : [...selectedSymbolIds, symbol.id];
 
     //previewSymbol = previewSymbol?.id === symbol.id ? null : symbol;
     //isZoomed = false;
@@ -61,7 +67,7 @@
   }
 
   function handleAddSelectedSymbolsToGroup(group: SymbolGroup) {
-    selectedSymbolIds.forEach(id => {
+    selectedSymbolIds.forEach((id) => {
       addSymbolToGroup(group.id, id);
     });
     selectedSymbolIds = [];
@@ -69,14 +75,17 @@
   function handleDragStart(event: DragEvent, symbol: Symbol) {
     draggedSymbol = symbol;
     if (event.dataTransfer) {
-      event.dataTransfer.setData('text/plain', symbol.id);
-      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData("text/plain", symbol.id);
+      event.dataTransfer.effectAllowed = "move";
     }
   }
 
-  function handleDragOver(event: DragEvent, target: SymbolGroup | Symbol | null = null) {
+  function handleDragOver(
+    event: DragEvent,
+    target: SymbolGroup | Symbol | null = null,
+  ) {
     event.preventDefault();
-    if (target && 'symbols' in target) {
+    if (target && "symbols" in target) {
       dropTarget = target;
       draggedOverSymbol = null;
     } else if (target) {
@@ -93,7 +102,7 @@
       // Agregar a grupo existente
       if (selectedSymbolIds.includes(draggedSymbol.id)) {
         let groupId = dropTarget.id;
-        selectedSymbolIds.forEach(id => {
+        selectedSymbolIds.forEach((id) => {
           addSymbolToGroup(groupId, id);
         });
         selectedSymbolIds = [];
@@ -119,14 +128,14 @@
   }
 
   function getGroupPreviewImage(group: SymbolGroup): string | null {
-    const firstSymbol = symbols.find(s => group.symbols.includes(s.id));
+    const firstSymbol = symbols.find((s) => group.symbols.includes(s.id));
     return firstSymbol?.imageUrl || null;
   }
 
   function removeSymbolFromGroup(groupId: string, symbolId: string) {
-    const group = symbolGroups.find(g => g.id === groupId);
+    const group = symbolGroups.find((g) => g.id === groupId);
     if (group) {
-      const updatedSymbols = group.symbols.filter(id => id !== symbolId);
+      const updatedSymbols = group.symbols.filter((id) => id !== symbolId);
       if (updatedSymbols.length === 0) {
         deleteGroup(group.id);
       } else {
@@ -153,39 +162,35 @@
 
 <div class="symbol-list">
   <h2>Symbols</h2>
-  <section class="symbols-section">    
+  <section class="symbols-section">
     {#if ungroupedSymbols.length === 0}
       <div class="empty-state">No unassigned symbols</div>
     {:else}
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        {#each ungroupedSymbols as symbol (symbol.id)}
-          <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <div 
-            class="symbol-item" 
-            class:active={previewSymbol?.id === symbol.id}
-            class:dragging={draggedSymbol?.id === symbol.id}
-            class:drop-target={draggedOverSymbol?.id === symbol.id}
-            class:selected={selectedSymbolIds.includes(symbol.id)}
-            draggable="true"
-            ondragstart={(e) => handleDragStart(e, symbol)}
-            ondragover={(e) => handleDragOver(e, symbol)}
-            ondrop={handleDrop}
-            ondragend={handleDragEnd}
-            onclick={() => handleSymbolClick(symbol)}
-          >
-            <img 
-              src={symbol.imageUrl} 
-              alt="Symbol" 
-              class="symbol-image"
-            />
-          </div>
-        {/each}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      {#each ungroupedSymbols as symbol (symbol.id)}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div
+          class="symbol-item"
+          class:active={previewSymbol?.id === symbol.id}
+          class:dragging={draggedSymbol?.id === symbol.id}
+          class:drop-target={draggedOverSymbol?.id === symbol.id}
+          class:selected={selectedSymbolIds.includes(symbol.id)}
+          draggable="true"
+          ondragstart={(e) => handleDragStart(e, symbol)}
+          ondragover={(e) => handleDragOver(e, symbol)}
+          ondrop={handleDrop}
+          ondragend={handleDragEnd}
+          onclick={() => handleSymbolClick(symbol)}
+        >
+          <img src={symbol.imageUrl} alt="Symbol" class="symbol-image" />
+        </div>
+      {/each}
     {/if}
   </section>
 
   <section class="groups-section">
     <h2>Symbol Groups</h2>
-    
+
     {#if symbolGroups.length === 0}
       <div class="empty-state">Drag symbols together to create groups</div>
     {:else}
@@ -193,7 +198,7 @@
         {#each symbolGroups as group (group.id)}
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <div 
+          <div
             class="group-item"
             class:active={selectedGroup?.id === group.id}
             class:drop-target={dropTarget?.id === group.id}
@@ -202,9 +207,9 @@
           >
             <div class="group-header">
               <div class="group-preview">
-                <img 
-                  src={getGroupPreviewImage(group)} 
-                  alt="Group preview" 
+                <img
+                  src={getGroupPreviewImage(group)}
+                  alt="Group preview"
                   class="group-preview-image"
                 />
                 <div class="group-info">
@@ -217,15 +222,15 @@
                       bind:value={editingGroup.char}
                     />
                     <div class="group-actions">
-                      <button 
-                        class="action-btn" 
+                      <button
+                        class="action-btn"
                         onclick={handleSaveGroup}
                         title="Save"
                       >
                         ✓
                       </button>
-                      <button 
-                        class="action-btn cancel" 
+                      <button
+                        class="action-btn cancel"
                         onclick={handleCancelEditGroup}
                         title="Cancel"
                       >
@@ -233,8 +238,8 @@
                       </button>
                     </div>
                   {:else}
-                    <span class="group-char">{group.char || '?'}</span>
-                    <button 
+                    <span class="group-char">{group.char || "?"}</span>
+                    <button
                       class="edit-btn"
                       onclick={() => handleEditGroup(group)}
                       title="Edit character"
@@ -246,34 +251,35 @@
                 </div>
               </div>
               {#if selectedSymbolIds.length > 0}
-                <button 
+                <button
                   class="details-button"
                   onclick={() => handleAddSelectedSymbolsToGroup(group)}
                 >
                   Add selected symbols
                 </button>
               {/if}
-              <button 
+              <button
                 class="details-button"
                 onclick={() => handleGroupClick(group)}
               >
-                {selectedGroup?.id === group.id ? 'Hide' : 'Details'}
+                {selectedGroup?.id === group.id ? "Hide" : "Details"}
               </button>
             </div>
-            
+
             {#if selectedGroup?.id === group.id}
               <div class="group-symbols">
                 {#each group.symbols as symbolId}
-                  {#if symbols.find(s => s.id === symbolId)}
+                  {#if symbols.find((s) => s.id === symbolId)}
                     <div class="group-symbol-item">
-                      <img 
-                        src={symbols.find(s => s.id === symbolId)?.imageUrl} 
-                        alt="Group Symbol" 
+                      <img
+                        src={symbols.find((s) => s.id === symbolId)?.imageUrl}
+                        alt="Group Symbol"
                         class="symbol-image"
                       />
-                      <button 
+                      <button
                         class="remove-symbol-btn"
-                        onclick={() => removeSymbolFromGroup(group.id, symbolId)}
+                        onclick={() =>
+                          removeSymbolFromGroup(group.id, symbolId)}
                         title="Remove from group"
                       >
                         ×
@@ -285,27 +291,23 @@
             {/if}
           </div>
         {/each}
-        
       </div>
     {/if}
-    <button 
-          class="details-button"
-          onclick={() => handleNewEmptyGroup()}
-        >
-          Add new group
-        </button>
+    <button class="details-button" onclick={() => handleNewEmptyGroup()}>
+      Add new group
+    </button>
   </section>
 
   {#if previewSymbol}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <div class="preview-overlay" onclick={() => previewSymbol = null}>
+    <div class="preview-overlay" onclick={() => (previewSymbol = null)}>
       <div class="preview-content">
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <img 
-          src={previewSymbol.imageUrl} 
-          alt="Symbol preview" 
+        <img
+          src={previewSymbol.imageUrl}
+          alt="Symbol preview"
           class="preview-image"
           class:zoomed={isZoomed}
           onclick={toggleZoom}
@@ -369,7 +371,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    
+
     padding-right: 4px; /* Space for scrollbar */
   }
 
@@ -380,7 +382,7 @@
     overflow: hidden;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: min-content; 
+    min-height: min-content;
   }
 
   .group-item:hover {
@@ -535,7 +537,7 @@
 
   .symbol-item:hover {
     transform: scale(1.05);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     z-index: 1;
   }
 
@@ -579,7 +581,7 @@
     background: white;
     padding: 24px;
     border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
     max-width: 95%;
     max-height: 95vh;
     min-width: 500px;
@@ -773,4 +775,4 @@
     border-color: #ff3e00;
     box-shadow: 0 0 0 2px #ff3e00;
   }
-</style> 
+</style>

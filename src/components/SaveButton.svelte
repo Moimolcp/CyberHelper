@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { saveState } from '../storage/symbols.svelte';
+    import { saveState } from "../storage/symbols.svelte";
 
     function handleSave() {
         saveState();
         // Mostrar una notificación temporal
-        const notification = document.createElement('div');
-        notification.textContent = 'Estado guardado';
+        const notification = document.createElement("div");
+        notification.textContent = "Estado guardado";
         notification.style.cssText = `
             position: fixed;
             bottom: 20px;
@@ -24,16 +24,11 @@
     }
 </script>
 
-<button 
-    class="save-button"
-    on:click={handleSave}
->
-    Guardar estado
-</button>
+<button class="save-button" on:click={handleSave}> Guardar estado </button>
 
 <style>
     .save-button {
-        background-color: #4CAF50;
+        background-color: #4caf50;
         color: white;
         border: none;
         padding: 8px 16px;
@@ -48,7 +43,11 @@
     }
 
     @keyframes fadeOut {
-        from { opacity: 1; }
-        to { opacity: 0; }
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
     }
-</style> 
+</style>

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import ClearButton from './ClearButton.svelte';
-  import SaveButton from './SaveButton.svelte';
-  let {callbackFileUpload} = $props();
+  import ClearButton from "./ClearButton.svelte";
+  import SaveButton from "./SaveButton.svelte";
+  let { callbackFileUpload } = $props();
 
   function handleFileUpload(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -12,13 +12,28 @@
         callbackFileUpload({
           id: crypto.randomUUID(),
           name: file.name,
-          imageUrl: e.target?.result as string
-        })
+          imageUrl: e.target?.result as string,
+        });
       };
       reader.readAsDataURL(file);
     }
   }
 </script>
+
+<div class="toolbar">
+  <div class="upload-container">
+    <input
+      type="file"
+      accept="image/*"
+      onchange={handleFileUpload}
+      id="image-upload"
+      class="hidden"
+    />
+    <label for="image-upload" class="upload-button"> Upload Image </label>
+  </div>
+  <SaveButton />
+  <ClearButton />
+</div>
 
 <style>
   .toolbar {
@@ -54,20 +69,3 @@
     background: #ff2d00;
   }
 </style>
-
-<div class="toolbar">
-  <div class="upload-container">
-    <input
-      type="file"
-      accept="image/*"
-      onchange={handleFileUpload}
-      id="image-upload"
-      class="hidden"
-    />
-    <label for="image-upload" class="upload-button">
-      Upload Image
-    </label>
-  </div>
-  <SaveButton />
-  <ClearButton />
-</div> 

@@ -1,35 +1,40 @@
 <script lang="ts">
-  import { toolManager, updateTool } from '../storage/symbols.svelte';
-  import type { Tool } from '../storage/symbols.svelte';
+  import { toolManager, updateTool } from "../storage/symbols.svelte";
+  import type { Tool } from "../storage/symbols.svelte";
 
   const tools = [
-    { id: 'select', name: 'Selección', icon: '◻', type: 'select' },
-    { id: 'grid', name: 'Cuadrícula', icon: '⊞', type: 'grid' },
-    { id: 'delete', name: 'Borrar', icon: '🗑', type: 'delete' },
-    { id: 'search', name: 'Buscar', icon: '🔍', type: 'search' }
+    { id: "select", name: "Selección", icon: "◻", type: "select" },
+    { id: "grid", name: "Cuadrícula", icon: "⊞", type: "grid" },
+    { id: "delete", name: "Borrar", icon: "🗑", type: "delete" },
+    { id: "search", name: "Buscar", icon: "🔍", type: "search" },
   ];
 
   let showGridInput = $state(false);
   let gridCharCount = $state(1);
-  let activeToolId = $state('select');
+  let activeToolId = $state("select");
 
-  function handleToolClick(tool: { id: string, name: string, icon: string, type: string }) {
-    if (tool.id === 'grid') {
+  function handleToolClick(tool: {
+    id: string;
+    name: string;
+    icon: string;
+    type: string;
+  }) {
+    if (tool.id === "grid") {
       showGridInput = true;
     } else {
       activeToolId = tool.id;
       updateTool({
-        type: tool.type as Tool['type'],
-        charCount: 0
+        type: tool.type as Tool["type"],
+        charCount: 0,
       });
     }
   }
 
   function handleGridSubmit() {
-    activeToolId = 'grid';
+    activeToolId = "grid";
     updateTool({
-      type: 'grid',
-      charCount: gridCharCount
+      type: "grid",
+      charCount: gridCharCount,
     });
     showGridInput = false;
   }
@@ -61,8 +66,11 @@
           step="1"
         />
         <div class="button-container">
-          <button class="submit-btn" on:click={handleGridSubmit}>Aceptar</button>
-          <button class="cancel-btn" on:click={() => showGridInput = false}>Cancelar</button>
+          <button class="submit-btn" on:click={handleGridSubmit}>Aceptar</button
+          >
+          <button class="cancel-btn" on:click={() => (showGridInput = false)}
+            >Cancelar</button
+          >
         </div>
       </div>
     </div>
@@ -150,7 +158,8 @@
     margin-top: 0.5rem;
   }
 
-  .submit-btn, .cancel-btn {
+  .submit-btn,
+  .cancel-btn {
     padding: 0.5rem 1rem;
     border-radius: 4px;
     border: none;
@@ -175,4 +184,4 @@
   .cancel-btn:hover {
     background: #eee;
   }
-</style> 
+</style>
