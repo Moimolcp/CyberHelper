@@ -5,11 +5,10 @@
   import ToolPanel from './components/ToolPanel.svelte';
   import Toolbar from './components/Toolbar.svelte';
   import type { ImageTab } from './types/image';
-
-  let imageTabs = $state<ImageTab[]>([]);
+  import { symbolManager } from './storage/symbols.svelte';
 
   function handleNewTab(tab: ImageTab) {
-    imageTabs = [...imageTabs, tab];
+    symbolManager.imageTabs = [...symbolManager.imageTabs, tab];
   }
 </script>
 
@@ -17,7 +16,7 @@
   <svelte:fragment slot="toolbar">
     <Toolbar callbackFileUpload={handleNewTab} />
   </svelte:fragment>
-  <ImageViewer {imageTabs} />
+  <ImageViewer imageTabs={symbolManager.imageTabs} />
   <svelte:fragment slot="symbols">
     <SymbolList />
   </svelte:fragment>

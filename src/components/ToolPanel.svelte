@@ -1,65 +1,37 @@
 <script lang="ts">
-
-  import { updateTool } from '../storage/symbols.svelte';
-
-
-  let activeToolId: string | null = null;
-  let gridCharCount: number = 0;
-  let showGridInput = false;
+  import { toolManager, updateTool } from '../storage/symbols.svelte';
+  import type { Tool } from '../storage/symbols.svelte';
 
   const tools = [
-    {
-      id: 'select',
-      icon: '◰',
-      name: 'Select',
-      action: () => updateTool({ type: 'select' })
-    },
-    {
-      id: 'grid',
-      icon: '⊞',
-      name: 'Grid',
-      action: () => {
-        showGridInput = true;
-      }
-    },
-    {
-      id: 'delete',
-      icon: '✗',
-      name: 'Delete Last',
-      action: () => updateTool({ type: 'delete' })
-    },
-    {
-      id: 'link',
-      icon: '↔',
-      name: 'Link',
-      action: () => updateTool({ type: 'link' })
-    },
-    {
-      id: 'search',
-      icon: '🔍',
-      name: 'Search',
-      action: () => updateTool({ type: 'search' })
-    }
+    { id: 'select', name: 'Selección', icon: '◻', type: 'select' },
+    { id: 'grid', name: 'Cuadrícula', icon: '⊞', type: 'grid' },
+    { id: 'delete', name: 'Borrar', icon: '🗑', type: 'delete' },
+    { id: 'search', name: 'Buscar', icon: '🔍', type: 'search' }
   ];
 
-  function handleToolClick(tool: typeof tools[0]) {
+  let showGridInput = $state(false);
+  let gridCharCount = $state(1);
+  let activeToolId = $state('select');
+
+  function handleToolClick(tool: { id: string, name: string, icon: string, type: string }) {
     if (tool.id === 'grid') {
       showGridInput = true;
     } else {
-      activeToolId = activeToolId === tool.id ? null : tool.id;
-      tool.action();
+      activeToolId = tool.id;
+      updateTool({
+        type: tool.type as Tool['type'],
+        charCount: 0
+      });
     }
   }
 
   function handleGridSubmit() {
-    if (gridCharCount > 0) {
-      updateTool({ 
-        type: 'grid', 
-        charCount: gridCharCount 
-      });
-      showGridInput = false;
-      activeToolId = 'grid';
-    }
+    activeToolId = 'grid';
+    updateTool({
+      type: 'grid',
+      charCount: gridCharCount
+    });
+    showGridInput = false;
   }
 </script>
 

@@ -1,7 +1,7 @@
 <script lang="ts">
-
+  import ClearButton from './ClearButton.svelte';
+  import SaveButton from './SaveButton.svelte';
   let {callbackFileUpload} = $props();
-
 
   function handleFileUpload(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -27,6 +27,7 @@
     background: #f8f8f8;
     border-bottom: 1px solid #ddd;
     z-index: 10;
+    gap: 0.5rem;
   }
 
   .upload-container {
@@ -67,4 +68,6 @@
       Upload Image
     </label>
   </div>
+  <SaveButton />
+  <ClearButton />
 </div> 
