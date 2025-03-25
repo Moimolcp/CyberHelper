@@ -10,6 +10,7 @@
   let dropTarget: SymbolGroup | null = $state(null);
   let draggedOverSymbol: Symbol | null = $state(null);
   let editingGroup: SymbolGroup | null = $state(null);
+  let selectedSymbolIds = $state<string[]>([]);
 
   const symbols = $derived(symbolManager.symbols);
   const symbolGroups = $derived(symbolManager.groups);
@@ -39,8 +40,16 @@
   }
 
   function handleSymbolClick(symbol: Symbol) {
-    previewSymbol = previewSymbol?.id === symbol.id ? null : symbol;
-    isZoomed = false;
+
+    selectedSymbolIds = selectedSymbolIds.includes(symbol.id) ? selectedSymbolIds.filter(id => id !== symbol.id) : [...selectedSymbolIds, symbol.id];
+
+
+    //previewSymbol = previewSymbol?.id === symbol.id ? null : symbol;
+    //isZoomed = false;
+  }
+
+  function handleNewEmptyGroup() {
+    createGroup([]);
   }
 
   function toggleZoom() {
@@ -51,6 +60,12 @@
     selectedGroup = selectedGroup?.id === group.id ? null : group;
   }
 
+  function handleAddSelectedSymbolsToGroup(group: SymbolGroup) {
+    selectedSymbolIds.forEach(id => {
+      addSymbolToGroup(group.id, id);
+    });
+    selectedSymbolIds = [];
+  }
   function handleDragStart(event: DragEvent, symbol: Symbol) {
     draggedSymbol = symbol;
     if (event.dataTransfer) {
@@ -76,7 +91,15 @@
 
     if (dropTarget) {
       // Agregar a grupo existente
-      addSymbolToGroup(dropTarget.id, draggedSymbol.id);
+      if (selectedSymbolIds.includes(draggedSymbol.id)) {
+        let groupId = dropTarget.id;
+        selectedSymbolIds.forEach(id => {
+          addSymbolToGroup(groupId, id);
+        });
+        selectedSymbolIds = [];
+      } else {
+        addSymbolToGroup(dropTarget.id, draggedSymbol.id);
+      }
     } else if (draggedOverSymbol && draggedOverSymbol.id !== draggedSymbol.id) {
       // Crear nuevo grupo con ambos símbolos
       const newGroup = createGroup([draggedSymbol.id, draggedOverSymbol.id]);
@@ -142,11 +165,13 @@
             class:active={previewSymbol?.id === symbol.id}
             class:dragging={draggedSymbol?.id === symbol.id}
             class:drop-target={draggedOverSymbol?.id === symbol.id}
+            class:selected={selectedSymbolIds.includes(symbol.id)}
             draggable="true"
             ondragstart={(e) => handleDragStart(e, symbol)}
             ondragover={(e) => handleDragOver(e, symbol)}
             ondrop={handleDrop}
             ondragend={handleDragEnd}
+            onclick={() => handleSymbolClick(symbol)}
           >
             <img 
               src={symbol.imageUrl} 
@@ -220,6 +245,14 @@
                   <span class="group-count">{group.symbols.length}</span>
                 </div>
               </div>
+              {#if selectedSymbolIds.length > 0}
+                <button 
+                  class="details-button"
+                  onclick={() => handleAddSelectedSymbolsToGroup(group)}
+                >
+                  Add selected symbols
+                </button>
+              {/if}
               <button 
                 class="details-button"
                 onclick={() => handleGroupClick(group)}
@@ -252,8 +285,15 @@
             {/if}
           </div>
         {/each}
+        
       </div>
     {/if}
+    <button 
+          class="details-button"
+          onclick={() => handleNewEmptyGroup()}
+        >
+          Add new group
+        </button>
   </section>
 
   {#if previewSymbol}
@@ -329,7 +369,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    overflow-y: auto;
+    
     padding-right: 4px; /* Space for scrollbar */
   }
 
@@ -340,6 +380,7 @@
     overflow: hidden;
     cursor: pointer;
     transition: all 0.2s ease;
+    min-height: min-content; 
   }
 
   .group-item:hover {
@@ -726,5 +767,10 @@
   .remove-symbol-btn:hover {
     background: #ff3e00;
     transform: scale(1.1);
+  }
+
+  .symbol-item.selected {
+    border-color: #ff3e00;
+    box-shadow: 0 0 0 2px #ff3e00;
   }
 </style> 

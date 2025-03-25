@@ -6,6 +6,8 @@
   import type { Symbol } from '../storage/symbols.svelte';
   import type { ImageTab, Grid, GridCell, Selection } from '../types/image';
   import Toolbar from './Toolbar.svelte';
+  import { getWordsByQuery } from '../lib/db';
+  import SearchResults from './SearchResults.svelte';
 
   let {imageTabs} = $props();
   let activeTabId = $derived(imageTabs[0].id);
@@ -29,6 +31,10 @@
   let adjustingCellIndex = $state<number | null>(null);
   let initialAdjustX = $state<number | null>(null);
   let adjustingSelectionId = $state<string | null>(null);
+  let searchResults = $state<string[]>([]);
+  let showSearchResults = $state(false);
+  let searchPosition = $state({ x: 0, y: 0 });
+  let selectedSearchSymbols = $state<string[]>([]);
 
   // Función para actualizar las dimensiones del contenedor
   function updateContainerDimensions() {
@@ -137,7 +143,7 @@
 
   $effect(() => {
     const length = selections.length;
-        updateCanvas();
+    updateCanvas();
   });
 
   function handleFileUpload(event: CustomEvent) {
@@ -194,68 +200,113 @@
     const canvasCoords = getCanvasCoordinates(event);
     const imageCoords = getImageCoordinates(canvasCoords.x, canvasCoords.y);
 
+    // Si estamos en modo búsqueda, buscar palabras basadas en los símbolos seleccionados
+    if (toolManager.tool.type === 'search') {
+
+      let text = '';
+
+      selections.forEach(selection => {
+        text += selection.symbolIds?.map(id => {
+          const gropuOfSymbol = symbolManager.groups.find(group => group.symbols.includes(id));
+          return gropuOfSymbol?.char || '_';
+        }).join(' ') || '';
+      });
+
+      console.log(text);
+      navigator.clipboard.writeText(text);
+
+      return;
+
+      //const dimensions = getImageDimensions();
+      //const clickedSelection = selections.find(selection => {
+      //    const x = imageOffset.x + (selection.xPercent * dimensions.width / 100);
+      //    const y = imageOffset.y + (selection.yPercent * dimensions.height / 100);
+      //    const width = (selection.widthPercent * dimensions.width / 100);
+      //    const height = (selection.heightPercent * dimensions.height / 100);//
+      //    return canvasCoords.x >= x && 
+      //           canvasCoords.x <= x + width && 
+      //           canvasCoords.y >= y && 
+      //           canvasCoords.y <= y + height;
+      //});//
+      //if (clickedSelection?.symbolIds) {
+      //    selectedSearchSymbols = clickedSelection.symbolIds;
+      //    
+      //    const symbolsText = selectedSearchSymbols.map(id => {
+      //      const gropuOfSymbol = symbolManager.groups.find(group => group.symbols.includes(id));
+      //        return gropuOfSymbol?.char || '_';
+      //    }).join('');//
+      //    searchPosition = { x: event.clientX, y: event.clientY };
+      //    showSearchResults = true;
+      //    
+      //    getWordsByQuery(symbolsText).then(results => {
+      //        searchResults = results;
+      //        console.log(results);
+      //    });
+      //}
+      //return;
+    }
+
     // Verificar si se está intentando ajustar una celda
     const dimensions = getImageDimensions();
     for (const selection of selections) {
-      const gridCells = selection.gridCells;
-      if (gridCells) {
-        const x = imageOffset.x + (selection.xPercent * dimensions.width / 100);
-        const y = imageOffset.y + (selection.yPercent * dimensions.height / 100);
-        const width = (selection.widthPercent * dimensions.width / 100);
-        const height = (selection.heightPercent * dimensions.height / 100);
+        const gridCells = selection.gridCells;
+        if (gridCells) {
+            const x = imageOffset.x + (selection.xPercent * dimensions.width / 100);
+            const y = imageOffset.y + (selection.yPercent * dimensions.height / 100);
+            const width = (selection.widthPercent * dimensions.width / 100);
+            const height = (selection.heightPercent * dimensions.height / 100);
 
-        gridCells.forEach((cell, index) => {
-          if (index < gridCells.length - 1) {
-            const cellX = x + (width * cell.startPercent / 100) + (width * cell.widthPercent / 100);
-            const cellY = y + height / 2;
+            gridCells.forEach((cell, index) => {
+                if (index < gridCells.length - 1) {
+                    const cellX = x + (width * cell.startPercent / 100) + (width * cell.widthPercent / 100);
+                    const cellY = y + height / 2;
 
-            // Verificar si el clic está cerca del manipulador de redimensionamiento
-            if (Math.abs(canvasCoords.x - cellX) < 5 && Math.abs(canvasCoords.y - cellY) < 5) {
-              isAdjustingGrid = true;
-              adjustingCellIndex = index;
-              initialAdjustX = canvasCoords.x;
-              adjustingSelectionId = selection.id;
-              return;
-            }
-          }
-        });
-      }
+                    if (Math.abs(canvasCoords.x - cellX) < 5 && Math.abs(canvasCoords.y - cellY) < 5) {
+                        isAdjustingGrid = true;
+                        adjustingCellIndex = index;
+                        initialAdjustX = canvasCoords.x;
+                        adjustingSelectionId = selection.id;
+                        return;
+                    }
+                }
+            });
+        }
     }
 
     // Si no estamos ajustando una celda, proceder con la selección normal
     if (!isAdjustingGrid) {
-      if (event.button === 0) { // Click izquierdo: iniciar selección
-        if (isInsideImage(canvasCoords.x, canvasCoords.y)) {
-          selectionStart = imageCoords;
-          selectionEnd = { ...imageCoords };
-          updateCanvas();
+        if (event.button === 0) { // Click izquierdo: iniciar selección
+            if (isInsideImage(canvasCoords.x, canvasCoords.y)) {
+                selectionStart = imageCoords;
+                selectionEnd = { ...imageCoords };
+                updateCanvas();
+            }
+        } else if (event.button === 1 || event.button === 2) { // Click medio o derecho: iniciar arrastre
+            isDragging = true;
+            lastMousePos = canvasCoords;
+            canvas.style.cursor = 'grab';
         }
-      } else if (event.button === 1 || event.button === 2) { // Click medio o derecho: iniciar arrastre
-        isDragging = true;
-        lastMousePos = canvasCoords;
-        canvas.style.cursor = 'grab';
-      }
     }
 
     if (toolManager.tool.type === 'delete') {
-      const dimensions = getImageDimensions();
-      // Buscar la selección que fue clickeada
-      const clickedSelection = selections.find(selection => {
-        const x = imageOffset.x + (selection.xPercent * dimensions.width / 100);
-        const y = imageOffset.y + (selection.yPercent * dimensions.height / 100);
-        const width = (selection.widthPercent * dimensions.width / 100);
-        const height = (selection.heightPercent * dimensions.height / 100);
+        const dimensions = getImageDimensions();
+        // Buscar la selección que fue clickeada
+        const clickedSelection = selections.find(selection => {
+            const x = imageOffset.x + (selection.xPercent * dimensions.width / 100);
+            const y = imageOffset.y + (selection.yPercent * dimensions.height / 100);
+            const width = (selection.widthPercent * dimensions.width / 100);
+            const height = (selection.heightPercent * dimensions.height / 100);
 
-        return canvasCoords.x >= x && 
-               canvasCoords.x <= x + width && 
-               canvasCoords.y >= y && 
-               canvasCoords.y <= y + height;
-      });
+            return canvasCoords.x >= x && 
+                   canvasCoords.x <= x + width && 
+                   canvasCoords.y >= y && 
+                   canvasCoords.y <= y + height;
+        });
 
-      if (clickedSelection) {
-        removeSelection(clickedSelection.id);
-      }
-      return; // Evitar crear una nueva selección mientras estamos en modo borrado
+        if (clickedSelection) {
+            removeSelection(clickedSelection.id);
+        }
+        return; // Evitar crear una nueva selección mientras estamos en modo borrado
     }
   }
 
@@ -694,6 +745,14 @@
   }
 
   const activeTab = $derived(imageTabs.find((tab: ImageTab) => tab.id === activeTabId));
+
+  function handleWordSelect(word: string) {
+    if (selectedSearchSymbols.length > 0) {
+        // Aquí puedes implementar la lógica para reemplazar los símbolos con la palabra seleccionada
+        console.log('Selected word:', word, 'for symbols:', selectedSearchSymbols);
+        showSearchResults = false;
+    }
+  }
 </script>
 
 <style>
@@ -819,4 +878,12 @@
       Upload an image to get started
     </div>
   {/if}
-</div> 
+</div>
+
+{#if showSearchResults}
+    <SearchResults 
+        results={searchResults} 
+        onSelect={handleWordSelect}
+        style="position: fixed; left: {searchPosition.x}px; top: {searchPosition.y}px; z-index: 1000;"
+    />
+{/if} 

@@ -65,19 +65,30 @@ export function deleteSymbolGroup(id: string) {
     symbolManager.groups = symbolManager.groups.filter(g => g.id !== id);
 }
 
-export function updateSymbolGroup(id: string, updates: Partial<SymbolGroup>) {
-    symbolManager.groups = symbolManager.groups.map(group => 
-        group.id === id ? { ...group, ...updates } : group
-    );
+function getNextAvailableChar(): string {
+    const usedChars = new Set(symbolManager.groups.map(g => g.char));
+    for (let i = 97; i <= 122; i++) { // 97 es 'a' en ASCII, 122 es 'z'
+        const char = String.fromCharCode(i);
+        if (!usedChars.has(char)) {
+            return char;
+        }
+    }
+    return '_'; // Si todos los caracteres están usados
 }
 
 export function createGroup(symbolsIds: string[]) : SymbolGroup {
     const group: SymbolGroup = {
         id: crypto.randomUUID(),
         symbols: symbolsIds,
-        char: "_"
+        char: getNextAvailableChar()
     }
     addSymbolGroup(group);
+
+    // Actualizar el groupId y el char de los símbolos
+    symbolManager.symbols = symbolManager.symbols.map(symbol => 
+        symbolsIds.includes(symbol.id) ? { ...symbol, groupId: group.id, char: group.char } : symbol
+    );
+
     return group;
 }
 
@@ -86,6 +97,10 @@ export function addSymbolToGroup(groupId: string, symbolId: string) {
     if (group) {
         group.symbols.push(symbolId);
     }
+    //update symbolgroup id
+    symbolManager.symbols = symbolManager.symbols.map(symbol => 
+        symbol.id === symbolId ? { ...symbol, groupId: groupId } : symbol
+    );
 }
 
 export function deleteGroup(groupId: string) {
@@ -93,9 +108,19 @@ export function deleteGroup(groupId: string) {
 }
 
 export function updateGroup(groupId: string, updates: Partial<SymbolGroup>) {
+    
+    console.log("updategroup maybe?");
+
     symbolManager.groups = symbolManager.groups.map(group => 
         group.id === groupId ? { ...group, ...updates } : group
     );
+
+    let charValue = updates.char? updates.char : "_";
+
+    symbolManager.symbols = symbolManager.symbols.map(symbol => 
+        symbol.groupId === groupId ? { ...symbol, char: charValue } : symbol
+    );
+
 }
 
 export function isSymbolInAnyGroup(symbolId1: string) {

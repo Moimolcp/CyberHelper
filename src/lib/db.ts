@@ -24,9 +24,7 @@ const worker = await createDbWorker(
   wasmUrl.toString(),
 );
 
-export function getWordsByQuery(query: string) {
-  return worker.db.query(`select * from words where word like ? order by count desc limit 5`, [query]).then(result => {
-    return result;
-  });
+export async function getWordsByQuery(query: string) {
+  const results = await worker.db.query(`select * from words where word like ? order by count desc limit 5`, [query])
+  return results.map((row: any) => row.word);
 }
-
