@@ -1,35 +1,27 @@
 <script lang="ts">
     import { saveState } from "../storage/symbols.svelte";
 
+
+    let message = $state("Guardar estado");
+
+
     function handleSave() {
+        message = "Guardando...";
         saveState();
-        // Mostrar una notificación temporal
-        const notification = document.createElement("div");
-        notification.textContent = "Estado guardado";
-        notification.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            z-index: 1000;
-            animation: fadeOut 2s forwards;
-        `;
-        document.body.appendChild(notification);
-        setTimeout(() => {
-            notification.remove();
-        }, 2000);
+        window.setTimeout(() => {
+            message = "Guardar estado";
+        }, 500);
     }
 </script>
 
-<button class="save-button" on:click={handleSave}> Guardar estado </button>
+<button class="save-button" onclick={handleSave}> {message} </button>
 
 <style>
     .save-button {
-        background-color: #4caf50;
-        color: white;
+
+        background-color: var(--clr-primary-a10);
+        color: var(--clr-light-a0);
+
         border: none;
         padding: 8px 16px;
         border-radius: 4px;
@@ -39,7 +31,7 @@
     }
 
     .save-button:hover {
-        background-color: #45a049;
+        background-color: var(--clr-primary-a20);
     }
 
     @keyframes fadeOut {

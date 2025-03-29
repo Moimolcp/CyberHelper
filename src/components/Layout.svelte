@@ -97,19 +97,23 @@
   }
 
   .layout {
+    background-color: var(--clr-surface-a0);
+
     display: flex;
     flex-direction: column;
     height: 100vh;
     width: 100vw;
-    background: white;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
+
   }
 
   .toolbar {
+    background-color: var(--clr-surface-a0);
+    
     flex: 0 0 auto;
     width: 100%;
   }
@@ -121,28 +125,29 @@
   }
 
   .tools-panel {
+    background-color: var(--clr-surface-a10);
+
     flex: 0 0 50px;
-    background: #f8f8f8;
-    border-right: 1px solid #ddd;
+    border-right: 1px solid #444; /* Borde más oscuro */
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    padding: 8px;
   }
 
-  .main-content {
+  .main-content {    
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: white;
     position: relative;
   }
 
   .symbols-panel {
+    background-color: var(--clr-surface-a10);
+    color: var(--clr-light-a0);
+    
     flex: 0 0 200px;
-    background: #f8f8f8;
-    border-left: 1px solid #ddd;
+    border-left: 1px solid #444; /* Borde más oscuro */
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -164,4 +169,5 @@
   .symbols-panel {
     transition: flex-basis 0.1s ease;
   }
+
 </style>

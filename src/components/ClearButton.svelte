@@ -1,23 +1,40 @@
 <script lang="ts">
   import { clearState } from "../storage/symbols.svelte";
 
+  let confirmed = $state(false);
+  let message = $state("Limpiar datos");
+
+  var timeoutId: number | undefined;
+
+
   function handleClear() {
-    if (
-      confirm(
-        "¿Estás seguro de que quieres limpiar todos los datos guardados? Esta acción no se puede deshacer.",
-      )
-    ) {
+    if (!confirmed) {
+      message = "Seguro?";
+      confirmed = true;
+      clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        message = "Limpiar datos";
+        confirmed = false;
+      }, 1000);
+    } else {
+      message = "Limpiando...";
+      confirmed = true;
       clearState();
-    }
+      clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        message = "Limpiar datos";
+        confirmed = false;
+      }, 500);
+    }    
   }
 </script>
 
-<button class="clear-button" on:click={handleClear}> Limpiar datos </button>
+<button class="clear-button" onclick={handleClear}> {message} </button>
 
 <style>
   .clear-button {
-    background-color: #ff4444;
-    color: white;
+    background-color: var(--clr-surface-a20);
+    color: var(--clr-light-a0);
     border: none;
     padding: 8px 16px;
     border-radius: 4px;
@@ -27,6 +44,6 @@
   }
 
   .clear-button:hover {
-    background-color: #cc0000;
+    background-color: var(--clr-surface-a30);
   }
 </style>

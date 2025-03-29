@@ -41,18 +41,16 @@
 </script>
 
 <div class="tool-panel">
-  <div class="tool-group">
-    {#each tools as tool}
-      <button
-        class="tool-button"
-        class:active={activeToolId === tool.id}
-        on:click={() => handleToolClick(tool)}
-        title={tool.name}
-      >
-        <span class="tool-icon">{tool.icon}</span>
-      </button>
-    {/each}
-  </div>
+  {#each tools as tool}
+    <button
+      class="tool-button"
+      class:active={activeToolId === tool.id}
+      on:click={() => handleToolClick(tool)}
+      title={tool.name}
+    >
+      <span class="tool-icon">{tool.icon}</span>
+    </button>
+  {/each}
 
   {#if showGridInput}
     <div class="grid-input-overlay">
@@ -79,36 +77,41 @@
 
 <style>
   .tool-panel {
+    background: var(--clr-surface-a10);
+    color: var(--clr-light-a0);
+
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem;
+    width: 100%;
     position: relative;
+    padding-top: 8px;    
   }
 
   .tool-button {
+    background: var(--clr-surface-a20);
+    color: var(--clr-light-a0);
+
     width: 40px;
     height: 40px;
-    border: 1px solid #ddd;
+    border: 1px solid #444;
     border-radius: 4px;
-    background: white;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
-    color: #333;
   }
 
   .tool-button:hover {
-    background: #f5f5f5;
-    border-color: #ccc;
+    background: var(--clr-surface-a30);
   }
 
   .tool-button.active {
-    background: #ff3e00;
-    border-color: #ff3e00;
-    color: white;
+    background: var(--clr-primary-a10);
+    border-color: var(--clr-primary-a10);
+    color: var(--clr-light-a0);
   }
 
   .tool-icon {
@@ -122,7 +125,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -130,10 +133,10 @@
   }
 
   .grid-input-container {
-    background: white;
+    background: #333;
     padding: 1.5rem;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -141,14 +144,16 @@
 
   .grid-input-container label {
     font-size: 0.9rem;
-    color: #666;
+    color: #ccc;
   }
 
   .grid-input-container input {
     padding: 0.5rem;
-    border: 1px solid #ddd;
+    border: 1px solid #444;
     border-radius: 4px;
     font-size: 1rem;
+    background: #555;
+    color: white;
   }
 
   .button-container {
@@ -177,11 +182,11 @@
   }
 
   .cancel-btn {
-    background: #f5f5f5;
-    color: #666;
+    background: #444;
+    color: white;
   }
 
   .cancel-btn:hover {
-    background: #eee;
+    background: #666;
   }
 </style>

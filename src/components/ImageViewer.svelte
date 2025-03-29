@@ -249,18 +249,7 @@
     if (!canvas || !ctx || !imageElement) return;
 
     const canvasCoords = getCanvasCoordinates(event);
-    const imageCoords = getImageCoordinates(canvasCoords.x, canvasCoords.y);
-
-    if (!isAdjustingGrid) {
-      if (event.button === 0) {
-        // Click izquierdo: iniciar selección
-        if (isInsideImage(canvasCoords.x, canvasCoords.y)) {
-          selectionStart = imageCoords;
-          selectionEnd = { ...imageCoords };
-          updateCanvas();
-        }
-      }
-    }
+    const imageCoords = getImageCoordinates(canvasCoords.x, canvasCoords.y)
 
     if (event.button === 1 || event.button === 2) {
       // Click medio o derecho: iniciar arrastre
@@ -388,6 +377,16 @@
     }
 
     // Si no estamos ajustando una celda, proceder con la selección normal
+    if (!isAdjustingGrid) {
+      if (event.button === 0) {
+        // Click izquierdo: iniciar selección
+        if (isInsideImage(canvasCoords.x, canvasCoords.y)) {
+          selectionStart = imageCoords;
+          selectionEnd = { ...imageCoords };
+          updateCanvas();
+        }
+      }
+    }
   }
 
   function handleMouseMove(event: MouseEvent) {
@@ -879,6 +878,11 @@
       activeTabId = symbolManager.imageTabs[0].id;
     }
   });
+
+  function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+  }
 </script>
 
 <div class="viewer-container">
@@ -927,6 +931,8 @@
 
 <style>
   .viewer-container {
+    background-color: var(--clr-surface-a0);
+    color: var(--clr-light-a0);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -935,6 +941,8 @@
   }
 
   .tabs-container {
+    background-color: var(--clr-surface-a10);
+    color: var(--clr-light-a0);
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -943,32 +951,38 @@
   }
 
   .tab-list {
+
+    background-color: var(--clr-surface-a10);
+    color: var(--clr-light-a0);
+
     display: flex;
-    padding: 0.5rem;
-    border-bottom: 1px solid #ddd;
-    background: white;
+    padding: 0.5rem 0.5rem 0rem 0.5rem;
+    border-bottom: 1px solid #444; /* Borde más oscuro */
     overflow-x: auto;
   }
 
   .tab-button {
+
+    background-color: var(--clr-surface-a0);
+    color: var(--clr-light-a0);
+
     border: none;
-    background: none;
     padding: 0.5rem 1rem;
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    color: #666;
     font-size: 0.9rem;
     white-space: nowrap;
     margin-right: 0.5rem;
+    border-radius: 10px 10px 0px 0px;
   }
 
   .tab-button:hover {
-    color: #ff3e00;
+    color: var(--clr-primary-a10); /* Color al pasar el mouse */
   }
 
   .tab-button.active {
-    border-bottom-color: #ff3e00;
-    color: #ff3e00;
+    border-bottom-color: var(--clr-primary-a10); /* Color activo */
+    color: var(--clr-primary-a10); /* Color activo */
   }
 
   .tab-content {
@@ -979,6 +993,9 @@
   }
 
   .image-container {
+    background-color: var(--clr-surface-a0);
+    color: var(--clr-light-a0);
+
     position: absolute;
     top: 0;
     left: 0;
@@ -987,7 +1004,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f8f8f8;
   }
 
   canvas {
@@ -997,6 +1013,9 @@
   }
 
   .empty-state {
+    background-color: var(--clr-surface-a0);
+    color: var(--clr-light-a0);
+
     position: absolute;
     top: 0;
     left: 0;
@@ -1005,8 +1024,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #666;
-    background: #f8f8f8;
     font-size: 1.1rem;
   }
 </style>

@@ -29,18 +29,20 @@
       id="image-upload"
       class="hidden"
     />
-    <label for="image-upload" class="upload-button"> Upload Image </label>
+    <button class="upload-button" onclick={() => document.getElementById('image-upload')?.click()}> Upload Image </button>
   </div>
   <SaveButton />
   <ClearButton />
 </div>
 
 <style>
+
   .toolbar {
+    background-color: var(--clr-surface-a10);
+
     display: flex;
     padding: 0.5rem;
-    background: #f8f8f8;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #444;
     z-index: 10;
     gap: 0.5rem;
   }
@@ -55,8 +57,8 @@
   }
 
   .upload-button {
-    background: #ff3e00;
-    color: white;
+    background: var(--clr-primary-a10);
+    color: var(--clr-light-a0);
     padding: 0.5rem 1rem;
     border-radius: 4px;
     cursor: pointer;
@@ -66,6 +68,6 @@
   }
 
   .upload-button:hover {
-    background: #ff2d00;
+    background-color: var(--clr-primary-a20);
   }
 </style>
