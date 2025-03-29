@@ -5,8 +5,11 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 export default defineConfig({
   plugins: [svelte()],
   build: {
-    target: "esnext"
+    target: "esnext",
+    outDir: './docs',
+    emptyOutDir: true
   },
+  base: "https://moimolcp.github.io/FrostDecoder/",
   server: {
     headers: {
       'Accept-Ranges': 'bytes',

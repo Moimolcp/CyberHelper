@@ -14,7 +14,7 @@ const config = {
   config: {
     serverMode: "full" as const,
     requestChunkSize: 4096,
-    url: "/words.db"
+    url: "/FrostDecoder/words.db"
   }
 };
 
